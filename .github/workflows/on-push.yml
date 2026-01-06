@@ -26,6 +26,7 @@ jobs:
   release:
     needs: detect-changes
     uses: ./.github/workflows/release.yml
+    if: ${{ needs.detect-changes.outputs.changed-modules != '[]' }}
     with:
       modules: ${{ needs.detect-changes.outputs.changed-modules }}
     secrets: inherit
