@@ -1,0 +1,35 @@
+---
+name: pr
+
+on:
+
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  detect-changes:
+    uses: ./.github/workflows/detect-changes.yml
+
+  check-version-update:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.changed-modules != '' }}
+    uses: ./.github/workflows/check-version-update.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(needs.detect-changes.outputs.changed-modules) }}
+    with:
+      PACKAGE_DIR: ${{ matrix.module }}
