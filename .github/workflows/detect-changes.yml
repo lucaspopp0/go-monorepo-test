@@ -31,13 +31,12 @@ jobs:
         with:
           script: |
             const path = require('path');
-            const { glob } = require('glob');
             
-            // Find all go.mod files
-            const goModFiles = await glob('**/go.mod', { 
-              cwd: process.env.GITHUB_WORKSPACE,
-              ignore: ['**/vendor/**', '**/node_modules/**']
+            // Find all go.mod files using @actions/glob
+            const globber = await glob.create('**/go.mod', {
+              followSymbolicLinks: false
             });
+            const goModFiles = await globber.glob();
             
             // Extract module paths
             const modules = goModFiles
