@@ -20,32 +20,12 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      changed-modules: ${{ steps.changed-modules.outputs.changes }}
+      changed-modules: ${{ steps.changed-modules.outputs.changed }}
     steps:
       -
         uses: actions/checkout@v6
       -
-        name: List go.mod files
-        id: list-modules
-        run: |
-          MODULES=$(find . -name 'go.mod' \
-            | sed -nE 's|\./(.*)/go\.mod|\1|pg' \
-            | jq -rc --raw-input --slurp 'split("\n") | map(select(. != ""))')
-
-          echo "All modules: $MODULES"
-
-          FILTERS=$(printf '%s' "$MODULES" \
-            | yq -o yaml -P 'map({"key": ., "value": [. + "/**"]}) | from_entries')
-
-          {
-            echo 'filters<<EOF';
-            echo "$FILTERS";
-            echo 'EOF';
-          } >> "$GITHUB_OUTPUT"
-      -
-        name: Check for module changes
-        uses: dorny/paths-filter@v3
+        name: Detect changed modules
         id: changed-modules
-        with:
-          filters: ${{ steps.list-modules.outputs.filters }}
+        uses: ./.github/actions/detect-changed-go-modules
     

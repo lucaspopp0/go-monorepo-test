@@ -1,0 +1,29 @@
+---
+name: check-version-updates
+
+on:
+  workflow_call:
+    inputs:
+      MODULES:
+        type: string
+        required: true
+  
+jobs:
+
+  check-version-update:
+    name: ${{ matrix.module }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(inputs.MODULES) }}
+    steps:
+      -
+        uses: actions/checkout@v6
+      -
+        name: Check package.json version has been incremented
+        uses: avides/actions-project-version-check@v2
+        id: check-version
+        with:
+          token: ${{ github.token }}
+          file-to-check: ${{ matrix.module }}/package.json
