@@ -20,73 +20,12 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      changed-modules: ${{ steps.changed-modules.outputs.changes }}
+      changed-modules: ${{ steps.changed-modules.outputs.changed }}
     steps:
       -
         uses: actions/checkout@v6
       -
-        name: Generate module filters
-        id: generate-filters
-        uses: actions/github-script@v7
-        with:
-          script: |
-            // Find all go.mod files using @actions/glob
-            const globber = await glob.create('**/go.mod', {
-              followSymbolicLinks: false
-            });
-              
-            const goModFiles = await globber.glob(); 
-
-            const trimPrefix = `${process.env.GITHUB_WORKSPACE}/`;
-            const trimSuffix = `/go.mod`;
-
-            // Extract module paths
-            const modules = goModFiles
-              .map(f => f.slice(trimPrefix.length))
-              .map(f => f.slice(0, -trimSuffix.length))
-              .sort();
-            
-            console.log('Found modules:', modules);
-            
-            // For each module, find direct children
-            const filters = {};
-            for (const module of modules) {
-              const directChildren = modules.filter(other => {
-                if (other === module) return false;
-                if (!other.startsWith(module + '/')) return false;
-                
-                // Check if direct child (one level deeper)
-                const relativePath = other.substring(module.length + 1);
-                return !relativePath.includes('/');
-              });
-              
-              // Build filter with inclusions and exclusions
-              filters[module] = [
-                `${module}/**`,
-                ...directChildren.map(child => `!${child}/**`)
-              ];
-            }
-            
-            console.log('Generated filters:', JSON.stringify(filters, null, 2));
-            
-            // Convert to YAML format
-            let yaml = '';
-            for (const [module, patterns] of Object.entries(filters)) {
-              yaml += `${module}:\n`;
-              patterns.forEach(pattern => {
-                yaml += `  - '${pattern}'\n`;
-              });
-            }
-            
-            console.log('YAML filters:\n', yaml);
-            
-            // Set as step output using core
-            core.setOutput('filters', yaml);
-      -
-        name: Check for module changes
-        uses: dorny/paths-filter@v3
+        name: Detect changed modules
         id: changed-modules
-        with:
-          predicate-quantifier: every
-          filters: ${{ steps.generate-filters.outputs.filters }}
+        uses: ./.github/actions/detect-changed-go-modules
     
