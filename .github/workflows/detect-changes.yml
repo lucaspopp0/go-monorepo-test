@@ -30,17 +30,16 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const path = require('path');
-            
             // Find all go.mod files using @actions/glob
             const globber = await glob.create('**/go.mod', {
               followSymbolicLinks: false
             });
-            const goModFiles = await globber.glob();
-            
+              
+            const goModFiles = await globber.glob(); 
+
             // Extract module paths
             const modules = goModFiles
-              .map(f => path.dirname(f))
+              .map(f => f.replace("/go.mod", ""))
               .filter(m => m !== '.')
               .sort();
             
