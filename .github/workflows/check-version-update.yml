@@ -31,9 +31,10 @@ jobs:
       -
         name: Check version has been documented in CHANGELOG.md
         env:
+          CHANGELOG_FILE: ${{ inputs.PACKAGE_DIR }}/CHANGELOG.md
           EXPECTED_VERSION: ${{ steps.check-version.outputs.version }}
         run: |
-          check_version=$(cat CHANGELOG.md | grep "${EXPECTED_VERSION}")
+          check_version=$(cat "$CHANGELOG_FILE" | grep "${EXPECTED_VERSION}")
           if $check_version -eq 1; then
             echo "CHANGELOG.md needs to be updated to document version: ${EXPECTED_VERSION}.";
             exit 1;
