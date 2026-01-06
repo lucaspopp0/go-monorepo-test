@@ -53,19 +53,11 @@ jobs:
         with:
           tag_prefix: ${{ steps.tag-prefix.outputs.prefix }}
       -
-        name: Determine previous release tag
-        id: get-prev
-        uses: mathieudutour/github-tag-action@v6.2
-        with:
-          github_token: ${{ github.token }}
-          tag_prefix: ${{ steps.tag-prefix.outputs.prefix }}
-          dry_run: true
-      -
-        name: Show plan
-        id: plan
+        name: Parse first line of commit message
+        id: release-body
         run: |
-          echo "Current version: ${{ steps.get-prev.outputs.previous_tag }}"
-          echo "Next version: ${{ steps.get-next.outputs.version_tag }}"
+          FIRST_LINE=$(git log --format=%B -n 1 HEAD | head -n 1)
+          echo "body=$FIRST_LINE" | tee -a "$GITHUB_OUTPUT"
       -
         name: Setup git config
         if: ${{ inputs.dry-run == false }}
@@ -83,12 +75,10 @@ jobs:
       -
         name: Create GitHub release
         if: ${{ inputs.dry-run == false }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          RELEASE_TAG: ${{ steps.get-next.outputs.version_tag }}
-        run: |
-          url=$(gh release create $RELEASE_TAG --target "${{ github.ref_name }}" --generate-notes)
-          echo "Successful release of $RELEASE_TAG! View it [here]($url)." >> $GITHUB_STEP_SUMMARY
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get-next.outputs.version_tag }}
+          body: ${{ steps.release-body.outputs.body }}
       -
         name: Move major floating tag
         if: ${{ inputs.dry-run == false }}
