@@ -1,3 +1,5 @@
 package a
 
-type A struct{}
+type A struct {
+	Field1 string
+}
