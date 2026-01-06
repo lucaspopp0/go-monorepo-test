@@ -1,0 +1,105 @@
+---
+name: workflow-release
+
+on:
+
+  workflow_call:
+    inputs:
+      modules:
+        type: string
+        required: true
+        description: |
+          JSON array of modules to release
+      dry-run:
+        type: boolean
+        required: false
+        default: false
+        description: Whether to perform a dry run (no tags or releases will be created)
+
+concurrency:
+  group: ${{ github.ref }}-create-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pull-requests: write
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+
+  tag-and-release:
+    runs-on: ubuntu-latest
+    if: ${{ inputs.modules != '[]' && inputs.modules != '' }}
+    strategy:
+      matrix:
+        module: ${{ fromJson(inputs.modules) }}
+    steps:
+      -
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      -
+        name: Output tag prefix
+        id: tag-prefix
+        run: |
+          echo "prefix=${{ matrix.module }}/v" | tee -a "$GITHUB_OUTPUT"
+      -
+        name: Generate the next tag to release
+        uses: paulhatch/semantic-version@v5.4.0
+        id: get-next
+        with:
+          tag_prefix: ${{ steps.tag-prefix.outputs.prefix }}
+      -
+        name: Determine previous release tag
+        id: get-prev
+        uses: mathieudutour/github-tag-action@v6.2
+        with:
+          github_token: ${{ github.token }}
+          tag_prefix: ${{ steps.tag-prefix.outputs.prefix }}
+          dry_run: true
+      -
+        name: Show plan
+        id: plan
+        run: |
+          echo "Current version: ${{ steps.get-prev.outputs.previous_tag }}"
+          echo "Next version: ${{ steps.get-next.outputs.version_tag }}"
+      -
+        name: Setup git config
+        if: ${{ inputs.dry-run == false }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+      -
+        name: Create tag for current HEAD
+        if: ${{ inputs.dry-run == false }}
+        env:
+          NEXT_TAG: ${{ steps.get-next.outputs.version_tag }}
+        run: |
+          git tag $NEXT_TAG
+          git push origin $NEXT_TAG
+      -
+        name: Create GitHub release
+        if: ${{ inputs.dry-run == false }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PREV_TAG: ${{ steps.get-prev.outputs.previous_tag }}
+          RELEASE_TAG: ${{ steps.get-next.outputs.version_tag }}
+        run: |
+          if [[ -n "$PREV_TAG" ]]; then
+            NOTES_START_FLAG=" --notes-start-tag $PREV_TAG"
+          fi
+
+          url=$(gh release create $RELEASE_TAG --target "${{ github.ref_name }}" --generate-notes$NOTES_START_FLAG)
+          echo "Successful release of $RELEASE_TAG! View it [here]($url)." >> $GITHUB_STEP_SUMMARY
+      -
+        name: Move major floating tag
+        if: ${{ inputs.dry-run == false }}
+        env:
+          MAJOR_TAG: ${{ format('{0}{1}', steps.tag-prefix.outputs.prefix, steps.get-next.outputs.major) }}
+        run: |
+          git tag -f $MAJOR_TAG
+          git push -f origin $MAJOR_TAG
+  
