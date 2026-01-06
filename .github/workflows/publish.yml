@@ -30,7 +30,7 @@ defaults:
 
 jobs:
 
-  tag-and-release:
+  publish:
     runs-on: ubuntu-latest
     if: ${{ inputs.modules != '[]' && inputs.modules != '' }}
     strategy:
@@ -59,12 +59,6 @@ jobs:
           TAG="${TAG_PREFIX}${VERSION}"
           echo "version-tag=$TAG" | tee -a "$GITHUB_OUTPUT"
       -
-        name: Parse first line of commit message
-        id: release-body
-        run: |
-          FIRST_LINE=$(git log --format=%B -n 1 HEAD | head -n 1)
-          echo "body=$FIRST_LINE" | tee -a "$GITHUB_OUTPUT"
-      -
         name: Setup git config
         if: ${{ inputs.dry-run == false }}
         run: |
@@ -78,10 +72,3 @@ jobs:
         run: |
           git tag $NEXT_TAG
           git push origin $NEXT_TAG
-      -
-        name: Create GitHub release
-        if: ${{ inputs.dry-run == false }}
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.parse-version.outputs.version-tag }}
-          body: ${{ steps.release-body.outputs.body }}
