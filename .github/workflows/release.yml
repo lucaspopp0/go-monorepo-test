@@ -47,11 +47,17 @@ jobs:
         run: |
           echo "prefix=${{ matrix.module }}/v" | tee -a "$GITHUB_OUTPUT"
       -
-        name: Generate the next tag to release
-        uses: paulhatch/semantic-version@v5.4.0
-        id: get-next
-        with:
-          tag_prefix: ${{ steps.tag-prefix.outputs.prefix }}
+        name: Parse version from package.json
+        id: parse-version
+        env:
+          TAG_PREFIX: ${{ steps.tag-prefix.outputs.prefix }}
+        run: |
+          VERSION=$(cat "${{ matrix.module }}/package.json" | jq -rc '.version')
+          VERSION=${VERSION##v}
+          echo "version=$VERSION" | tee -a "$GITHUB_OUTPUT"
+
+          TAG="${TAG_PREFIX}${VERSION}"
+          echo "version-tag=$TAG" | tee -a "$GITHUB_OUTPUT"
       -
         name: Parse first line of commit message
         id: release-body
@@ -68,7 +74,7 @@ jobs:
         name: Create tag for current HEAD
         if: ${{ inputs.dry-run == false }}
         env:
-          NEXT_TAG: ${{ steps.get-next.outputs.version_tag }}
+          NEXT_TAG: ${{ steps.parse-version.outputs.version-tag }}
         run: |
           git tag $NEXT_TAG
           git push origin $NEXT_TAG
@@ -77,14 +83,5 @@ jobs:
         if: ${{ inputs.dry-run == false }}
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ steps.get-next.outputs.version_tag }}
+          tag_name: ${{ steps.parse-version.outputs.version-tag }}
           body: ${{ steps.release-body.outputs.body }}
-      -
-        name: Move major floating tag
-        if: ${{ inputs.dry-run == false }}
-        env:
-          MAJOR_TAG: ${{ format('{0}{1}', steps.tag-prefix.outputs.prefix, steps.get-next.outputs.major) }}
-        run: |
-          git tag -f $MAJOR_TAG
-          git push -f origin $MAJOR_TAG
-  
