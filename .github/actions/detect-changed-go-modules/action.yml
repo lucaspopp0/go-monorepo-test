@@ -30,7 +30,7 @@ runs:
             .map(f => f.slice(0, -trimSuffix.length))
             .sort();
           
-          console.log('Found modules:', modules);
+          console.debug('Found modules:', modules);
           
           // For each module, find direct children
           const filters = {};
@@ -51,7 +51,7 @@ runs:
             ];
           }
           
-          console.log('Generated filters:', JSON.stringify(filters, null, 2));
+          console.debug('Generated filters:', JSON.stringify(filters, null, 2));
           
           // Convert to YAML format
           let yaml = '';
@@ -62,7 +62,7 @@ runs:
             });
           }
           
-          console.log('YAML filters:\n', yaml);
+          console.debug('YAML filters:\n', yaml);
           
           // Set as step output using core
           core.setOutput('filters', yaml);
