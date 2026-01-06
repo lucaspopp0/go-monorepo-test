@@ -23,9 +23,9 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
-  publish:
+  release:
     needs: detect-changes
-    uses: ./.github/workflows/publish.yml
+    uses: ./.github/workflows/release.yml
     if: ${{ needs.detect-changes.outputs.changed-modules != '[]' }}
     with:
       modules: ${{ needs.detect-changes.outputs.changed-modules }}
