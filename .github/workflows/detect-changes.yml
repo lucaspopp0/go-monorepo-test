@@ -37,10 +37,13 @@ jobs:
               
             const goModFiles = await globber.glob(); 
 
+            const trimPrefix = `${process.env.GITHUB_WORKSPACE}/`;
+            const trimSuffix = `/go.mod`;
+
             // Extract module paths
             const modules = goModFiles
-              .map(f => f.replace("/go.mod", ""))
-              .filter(m => m !== '.')
+              .map(f => f.slice(trimPrefix.length))
+              .map(f => f.slice(0, -trimSuffix.length))
               .sort();
             
             console.log('Found modules:', modules);
