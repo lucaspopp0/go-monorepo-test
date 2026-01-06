@@ -23,13 +23,9 @@ jobs:
   detect-changes:
     uses: ./.github/workflows/detect-changes.yml
 
-  check-version-update:
+  check-version-updates:
     needs: detect-changes
-    if: ${{ needs.detect-changes.outputs.changed-modules != '' }}
-    uses: ./.github/workflows/check-version-update.yml
-    strategy:
-      fail-fast: false
-      matrix:
-        module: ${{ fromJson(needs.detect-changes.outputs.changed-modules) }}
+    if: ${{ needs.detect-changes.outputs.changed-modules != '[]' }}
+    uses: ./.github/workflows/check-version-updates.yml
     with:
-      PACKAGE_DIR: ${{ matrix.module }}
+      MODULES: ${{ needs.detect-changes.outputs.changed-modules }}

@@ -34,6 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ inputs.modules != '[]' && inputs.modules != '' }}
     strategy:
+      fail-fast: false
       matrix:
         module: ${{ fromJson(inputs.modules) }}
     steps:

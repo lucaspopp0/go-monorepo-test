@@ -1,37 +1,41 @@
 ---
-name: check-version-update
+name: check-version-updates
 
 on:
   workflow_call:
     inputs:
-      PACKAGE_DIR:
+      MODULES:
         type: string
         required: true
-    outputs:
-      VERSION:
-        description: "Semver version"
-        value: ${{ jobs.check.outputs.version }}
   
 jobs:
 
-  check:
+  check-version-update:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.check-version.outputs.version }}
+    strategy:
+      fail-fast: false
+      matrix:
+        module: ${{ fromJson(inputs.MODULES) }}
     steps:
       -
         uses: actions/checkout@v6
+      -
+        name: Pick paths
+        id: paths
+        run: |
+          echo "package-json=${{ matrix.module }}/package.json" | tee -a "$GITHUB_OUTPUT"
+          echo "changelog=${{ matrix.module }}/CHANGELOG.md" | tee -a "$GITHUB_OUTPUT"
       -
         name: Check package.json version has been incremented
         uses: avides/actions-project-version-check@v2
         id: check-version
         with:
           token: ${{ github.token }}
-          file-to-check: ${{ inputs.PACKAGE_DIR }}/package.json
+          file-to-check: ${{ steps.paths.outputs.package-json }}
       -
         name: Check version has been documented in CHANGELOG.md
         env:
-          CHANGELOG_FILE: ${{ inputs.PACKAGE_DIR }}/CHANGELOG.md
+          CHANGELOG_FILE: ${{ steps.paths.outputs.changelog }}
           EXPECTED_VERSION: ${{ steps.check-version.outputs.version }}
         run: |
           check_version=$(cat "$CHANGELOG_FILE" | grep "${EXPECTED_VERSION}")
