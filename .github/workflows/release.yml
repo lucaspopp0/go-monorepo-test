@@ -85,14 +85,9 @@ jobs:
         if: ${{ inputs.dry-run == false }}
         env:
           GH_TOKEN: ${{ github.token }}
-          PREV_TAG: ${{ steps.get-prev.outputs.previous_tag }}
           RELEASE_TAG: ${{ steps.get-next.outputs.version_tag }}
         run: |
-          if [[ -n "$PREV_TAG" ]]; then
-            NOTES_START_FLAG=" --notes-start-tag $PREV_TAG"
-          fi
-
-          url=$(gh release create $RELEASE_TAG --target "${{ github.ref_name }}" --generate-notes$NOTES_START_FLAG)
+          url=$(gh release create $RELEASE_TAG --target "${{ github.ref_name }}" --generate-notes)
           echo "Successful release of $RELEASE_TAG! View it [here]($url)." >> $GITHUB_STEP_SUMMARY
       -
         name: Move major floating tag
