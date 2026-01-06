@@ -87,5 +87,6 @@ jobs:
         uses: dorny/paths-filter@v3
         id: changed-modules
         with:
+          predicate-quantifier: all
           filters: ${{ steps.generate-filters.outputs.filters }}
     
