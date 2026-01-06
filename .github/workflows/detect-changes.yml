@@ -20,7 +20,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
-      changed-modules: ${{ steps.changed-workflows.outputs.changes }}
+      changed-modules: ${{ steps.changed-modules.outputs.changes }}
     steps:
       -
         uses: actions/checkout@v6
