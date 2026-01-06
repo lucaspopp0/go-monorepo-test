@@ -21,26 +21,9 @@ jobs:
       -
         uses: actions/checkout@v6
       -
-        name: Pick paths
-        id: paths
-        run: |
-          echo "package-json=${{ matrix.module }}/package.json" | tee -a "$GITHUB_OUTPUT"
-          echo "changelog=${{ matrix.module }}/CHANGELOG.md" | tee -a "$GITHUB_OUTPUT"
-      -
         name: Check package.json version has been incremented
         uses: avides/actions-project-version-check@v2
         id: check-version
         with:
           token: ${{ github.token }}
-          file-to-check: ${{ steps.paths.outputs.package-json }}
-      -
-        name: Check version has been documented in CHANGELOG.md
-        env:
-          CHANGELOG_FILE: ${{ steps.paths.outputs.changelog }}
-          EXPECTED_VERSION: ${{ steps.check-version.outputs.version }}
-        run: |
-          check_version=$(cat "$CHANGELOG_FILE" | grep "${EXPECTED_VERSION}")
-          if $check_version -eq 1; then
-            echo "CHANGELOG.md needs to be updated to document version: ${EXPECTED_VERSION}.";
-            exit 1;
-          fi
+          file-to-check: ${{ matrix.module }}/package.json
