@@ -35,7 +35,7 @@ jobs:
           echo "All modules: $MODULES"
 
           FILTERS=$(printf '%s' "$MODULES" \
-            | yq -o yaml 'to_entries | map({(.value): [.value + "/**"]})')
+            | yq -o yaml -P 'map({"key": ., "value": [. + "/**"]}) | from_entries')
 
           {
             echo 'filters<<EOF';
